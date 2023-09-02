@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions      = [pgcrypto]
+}
+
+model app_user {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String        @db.Uuid
+  interests   String        @db.VarChar(255)
+  created_at  DateTime      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime      @default(now()) @db.Timestamp(6)
+  user        user          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  appointment appointment[]
+}
+
+model appointment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mentor_id   String   @db.Uuid
+  app_user_id String   @db.Uuid
+  date        DateTime @db.Date
+  time        DateTime @db.Time(6)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  app_user    app_user @relation(fields: [app_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mentor      mentor   @relation(fields: [mentor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model available_hours {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mentor_id   String   @db.Uuid
+  start_time  DateTime @db.Time(6)
+  end_time    DateTime @db.Time(6)
+  day_of_week Int
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  mentor      mentor   @relation(fields: [mentor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model company {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String?  @db.VarChar(255)
+  name        String   @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  user_id     String   @db.Uuid
+  tenant_id   String   @db.VarChar(255)
+  user        user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model mentor {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String            @db.Uuid
+  specialization  String            @db.VarChar(255)
+  experience      Int
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  appointment     appointment[]
+  available_hours available_hours[]
+  user            user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String     @unique @db.VarChar(255)
+  firstName   String?    @db.VarChar(255)
+  lastName    String?    @db.VarChar(255)
+  roq_user_id String     @db.VarChar(255)
+  tenant_id   String     @db.VarChar(255)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @default(now()) @db.Timestamp(6)
+  app_user    app_user[]
+  company     company[]
+  mentor      mentor[]
+}
